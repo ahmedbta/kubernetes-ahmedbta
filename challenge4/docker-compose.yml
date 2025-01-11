@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  flask-app-db:
+    build:
+      context: .
+    container_name: flask-app-db
+    environment:
+      - FLASK_ENV=development
+    ports:
+      - "5001:5000"  # Map to a different port for debugging (optional)
+    depends_on:
+      - mongodb
+    networks:
+      - flask-network
+
+  flask-app-simple:
+    build:
+      context: .
+    container_name: flask-app-simple
+    command: ["python", "app_simple.py"]  # Override CMD in Dockerfile
+    environment:
+      - FLASK_ENV=development
+    ports:
+      - "5002:5000"  # Map to a different port for debugging (optional)
+    networks:
+      - flask-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - flask-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"  # Expose NGINX on port 80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Bind custom NGINX config
+    depends_on:
+      - flask-app-db
+      - flask-app-simple
+    networks:
+      - flask-network
+
+volumes:
+  mongo-data:
+
+networks:
+  flask-network:
+
